@@ -26,7 +26,7 @@ Whether you are working with **people, places, or policies**, Sequenzo helps unc
 
 Sequenzo outperforms traditional R-based tools in social sequence analysis, delivering faster processing and superior efficiency, especially for large-scale datasets. **No big data? No problem. You don’t need big data to benefit as Sequenzo is designed to enhance sequence analysis at any scale, making complex methods accessible to everyone.**
 
-# Target Audience
+## Target Audience
 
 Sequenzo is designed for:
 
