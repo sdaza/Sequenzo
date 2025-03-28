@@ -2,12 +2,39 @@
   <img src="https://raw.githubusercontent.com/Liang-Team/Sequenzo/main/assets/logo/FullLogo_NoBuffer.jpg" alt="Sequenzo Logo" width="400">
 </p>
 
+<p align="center">
+  <!-- ✅ PyPI Latest Version Badge -->
+  <a href="https://pypi.org/project/sequenzo/">
+    <img alt="PyPI - Version" src="https://img.shields.io/pypi/v/sequenzo?color=blue">
+  </a>
+
+  <!-- 📦 Downloads Badge (可选) -->
+  <a href="https://pypi.org/project/sequenzo/">
+    <img alt="Downloads" src="https://static.pepy.tech/badge/sequenzo">
+  </a>
+
+  <!-- 📄 License Badge -->
+  <a href="https://github.com/Liang-Team/Sequenzo/blob/main/LICENSE">
+    <img alt="License" src="https://img.shields.io/github/license/Liang-Team/Sequenzo">
+  </a>
+</p>
+
 # Sequenzo: Fast, scalable, and intuitive social sequence analysis
 
 Sequenzo is a high-performance Python package designed for social sequence analysis. It is built to analyze **any sequence of categorical events**, from individual career paths and migration patterns to corporate growth and urban development. 
 Whether you are working with **people, places, or policies**, Sequenzo helps uncover meaningful patterns efficiently. 
 
 Sequenzo outperforms traditional R-based tools in social sequence analysis, delivering faster processing and superior efficiency, especially for large-scale datasets. **No big data? No problem. You don’t need big data to benefit as Sequenzo is designed to enhance sequence analysis at any scale, making complex methods accessible to everyone.**
+
+# Target Audience
+
+Sequenzo is designed for:
+
+- 🧑‍🎓 Quantitative researchers in sociology, demography, political science, economics, management, etc.
+- 📊 Data scientists, data analysts, and business analysts working on trajectory/time-series clustering
+- 🧑‍🏫 Educators teaching courses involving social sequence data
+- 🔁 Users familiar with R packages like `TraMineR` who want a Python-native alternative
+
 
 ## Why Choose Sequenzo?
 
