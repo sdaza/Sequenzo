@@ -1,0 +1,36 @@
+# MacOS system files
+.DS_Store
+
+# IDE settings
+.idea/
+.vscode/
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+*.egg-info/
+build/
+dist/
+*.log
+*.tmp
+
+# Jupyter Notebooks
+.ipynb_checkpoints/
+
+# Compiled Cython / C / C++
+*.c
+*.cpp
+*.so
+*.dylib
+*.o
+*.a
+
+# Python wheels
+*.whl
+
+# Rust build outputs
+**/target/
+sequenzo/rust_fast_cluster/target/
