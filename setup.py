@@ -14,6 +14,7 @@ import pybind11
 import numpy
 import os
 import sys
+from glob import glob
 
 
 def get_extra_compile_args():
@@ -38,11 +39,11 @@ def configure_cpp_extension():
     try:
         ext_module = Pybind11Extension(
             'sequenzo.dissimilarity_measures.c_code',
-            sources=['sequenzo/dissimilarity_measures/src/module.cpp'],
+            sources=glob('sequenzo/dissimilarity_measures/src/*.cpp'),  # 👈 自动收集所有 .cpp 文件
             include_dirs=[
                 pybind11.get_include(),
                 pybind11.get_include(user=True),
-                'sequenzo/dissimilarity_measures/src/'
+                'sequenzo/dissimilarity_measures/src/',
             ],
             extra_compile_args=get_extra_compile_args(),
             language='c++',
