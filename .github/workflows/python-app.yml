@@ -1,142 +1,56 @@
 # GitHub Actions workflow for Sequenzo package
-name: Sequenzo Package CI
+# 打包 wheel（.whl）
+# 支持三大平台：
+# Linux (manylinux) → 用 cibuildwheel
+# macOS (universal2) → 用 build_ext + build
+# Windows → 用 cibuildwheel
+
+name: Build Wheels for Sequenzo
 
 on:
   push:
     tags:
-      - "v*"  # 触发当 tag 以 'v' 开头，例如 v0.1.1
-  workflow_dispatch:  # 允许手动触发
-
-permissions:
-  contents: read
+      - "v*"  # 比如 v0.1.0
+  workflow_dispatch:  # 支持手动触发
 
 jobs:
   build:
+    name: Build on ${{ matrix.os }} for Python ${{ matrix.python-version }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
         python-version: ['3.9', '3.10', '3.11']
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: Checkout source
+        uses: actions/checkout@v4
 
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ matrix.python-version }}
-
-    - name: Install Xcode command line tools (macOS)
-      if: matrix.os == 'macos-latest'
-      run: |
-        xcode-select --install || true
-    # Skip if you have installed
-
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install Cython pybind11
-        pip install build twine
-
-    - name: Build package
-      run: |
-        python -m build
-        echo "Files in dist/ after build:"
-        ls -lah dist/
-
-    - name: Verify package
-      run: twine check dist/*
-
-    - name: Upload built artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: wheels-${{ matrix.os }}-${{ matrix.python-version }}
-        path: |
-          dist/*.whl
-          dist/*.tar.gz
-
-  build_linux:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ['3.9', '3.10', '3.11']
-
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: "3.11"
-
-    - name: Install cibuildwheel
-      run: python -m pip install cibuildwheel
-
-    - name: Build manylinux wheels
-      run: |
-        python -m cibuildwheel --output-dir dist
-
-    - name: Upload built artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: linux-wheels-${{ matrix.python-version }}
-        path: dist/*
-
-  publish:
-    needs: [build, build_linux]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Download all built wheels
-        uses: actions/download-artifact@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
         with:
-          path: artifacts
+          python-version: ${{ matrix.python-version }}
 
-      - name: Debug artifacts
+      - name: Install dependencies
         run: |
-          echo "Checking artifacts directory structure:"
-          find artifacts -type d | sort
-          echo "All files in artifacts directory:"
-          find artifacts -type f | sort
+          python -m pip install --upgrade pip
+          pip install Cython pybind11 numpy build cibuildwheel twine
 
-      - name: Move wheels and source dist to `dist/`
+      - name: Build wheels (platform-specific)
         run: |
-          mkdir -p dist/
-          echo "Moving wheel files:"
-          find artifacts/ -name "*.whl" -exec ls -lah {} \;
-          find artifacts/ -name "*.whl" -exec mv -v {} dist/ \;
-          
-          echo "Moving tar.gz files:"
-          find artifacts/ -name "*.tar.gz" -exec ls -lah {} \;
-          find artifacts/ -name "*.tar.gz" -exec mv -v {} dist/ \;
-          
-          echo "Contents of dist directory:"
-          ls -lah dist/
-          echo "Number of files in dist directory:"
-          find dist/ -type f | wc -l
+          if [[ "${{ runner.os }}" == "macOS" ]]; then
+            python setup.py build_ext --inplace
+            python -m build
+          else
+            python -m cibuildwheel --output-dir dist
+        shell: bash
 
-      - name: Verify packages before upload
-        run: |
-          pip install twine
-          echo "Validating package distribution files:"
-          twine check dist/*
-            
-          echo "Checking LICENSE file presence:"
-          for wheel in dist/*.whl; do
-            echo "Extracting $wheel to check for LICENSE file..."
-            python -m zipfile -l "$wheel" | grep -i license || echo "No LICENSE found in $wheel"
-          done
-          
-          for sdist in dist/*.tar.gz; do
-            echo "Listing $sdist to check for LICENSE file..."
-            tar -tvf "$sdist" | grep -i license || echo "No LICENSE found in $sdist"
-          done
+      - name: Check wheels
+        run: twine check dist/*
 
-      - name: Publish to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
+      - name: Upload wheels
+        uses: actions/upload-artifact@v4
         with:
-          password: ${{ secrets.PYPI_PASSWORD }}
-          skip-existing: true
-          verbose: true
+          name: wheels-${{ matrix.os }}-${{ matrix.python-version }}
+          path: dist/
