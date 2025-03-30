@@ -28,6 +28,12 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
+    - name: Install Xcode command line tools (macOS)
+      if: matrix.os == 'macos-latest'
+      run: |
+        xcode-select --install || true
+    # Skip if you have installed
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip

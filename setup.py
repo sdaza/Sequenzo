@@ -4,9 +4,17 @@
 @Time    : 27/02/2025 12:13
 @Desc    : Sequenzo Package Setup Configuration
 
-This file is maintained for backward compatibility and to handle C++ extension compilation.
+This file is maintained for backward compatibility and to handle C++ & Cython extension compilation.
 Most configuration is now in pyproject.toml.
+
+Suggested command lines for developers:
+    # 编译所有 Cython + C++
+    python setup.py build_ext --inplace
+
+    # 开发者模式安装
+    pip install -e .
 """
+
 from setuptools import setup, Extension
 from pybind11.setup_helpers import Pybind11Extension, build_ext
 from Cython.Build import cythonize
@@ -31,7 +39,6 @@ def get_cython_compile_args():
     extra_compile_args = []
     if sys.platform == "win32":
         extra_compile_args.append("/O2")
-    # 不设置 macOS 或 Linux 的编译参数，让系统自动决定
     return extra_compile_args
 
 
@@ -39,7 +46,7 @@ def configure_cpp_extension():
     try:
         ext_module = Pybind11Extension(
             'sequenzo.dissimilarity_measures.c_code',
-            sources=glob('sequenzo/dissimilarity_measures/src/*.cpp'),  # 👈 自动收集所有 .cpp 文件
+            sources=glob('sequenzo/dissimilarity_measures/src/*.cpp'),
             include_dirs=[
                 pybind11.get_include(),
                 pybind11.get_include(user=True),
@@ -56,27 +63,41 @@ def configure_cpp_extension():
         return []
 
 
-def configure_cython_extension():
-    try:
-        ext_module = Extension(
-            name="sequenzo.clustering.utils.point_biserial",
-            sources=["sequenzo/clustering/utils/point_biserial.pyx"],
-            include_dirs=[numpy.get_include()],
-            extra_compile_args=get_cython_compile_args(),
+def configure_cython_extensions():
+    """
+    Currently, there are two places that use cython:
+    clustering/utils and dissimilarity_measures/utils.
+    To avoid calling many cython files manually, I set up this function here.
+    """
+    # Search all the pyx files.
+    cython_files = glob("sequenzo/**/*.pyx", recursive=True)
+    extensions = []
+
+    for pyx_file in cython_files:
+        module_name = pyx_file.replace("/", ".").replace(".pyx", "")
+        extensions.append(
+            Extension(
+                name=module_name,
+                sources=[pyx_file],
+                include_dirs=[numpy.get_include()],
+                extra_compile_args=get_cython_compile_args(),
+            )
         )
-        print("Cython extension configured successfully")
-        return cythonize(ext_module, compiler_directives={"language_level": "3"})
-    except Exception as e:
-        print(f"Warning: Unable to configure Cython extension: {e}")
+
+    if extensions:
+        print(f"Found {len(extensions)} Cython modules.")
+        return cythonize(extensions, compiler_directives={"language_level": "3"})
+    else:
+        print("No Cython modules found.")
         return []
 
 
-# 自动创建目标目录，防止 copy .so 报错
+# 防止路径缺失导致安装报错
 os.makedirs("sequenzo/dissimilarity_measures/src", exist_ok=True)
 os.makedirs("sequenzo/clustering/utils", exist_ok=True)
 
-
+# 正式调用
 setup(
-    ext_modules=configure_cpp_extension() + configure_cython_extension(),
+    ext_modules=configure_cpp_extension() + configure_cython_extensions(),
     cmdclass={"build_ext": build_ext},
 )
