@@ -44,11 +44,13 @@ jobs:
           python -m build
 
       # 在 Linux/windows 构建开始前，加一步“干净化”操作
+      # 加上 shell: bash 就能在 Windows 上也“模拟”出 Bash 环境运行这些命令
       - name: Clean previous build outputs
         if: runner.os != 'macOS'
         run: |
           rm -rf build/ dist/ *.egg-info
           find . -name "*.so" -delete
+        shell: bash
 
       # CIBW_SKIP: "pp*" 表示跳过所有 PyPy 构建（如 pp39-*, pp310-* 等）。
       # 我们的项目里有大量的 Cython 模块、.cpp / .pyx 扩展、pybind11 接口
