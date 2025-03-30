@@ -14,7 +14,7 @@ Suggested command lines for developers:
     # 开发者模式安装
     pip install -e .
 """
-
+from pathlib import Path
 from setuptools import setup, Extension
 from pybind11.setup_helpers import Pybind11Extension, build_ext
 from Cython.Build import cythonize
@@ -70,25 +70,29 @@ def configure_cython_extensions():
     To avoid calling many cython files manually, I set up this function here.
     """
     # Search all the pyx files.
-    cython_files = glob("sequenzo/**/*.pyx", recursive=True)
-    extensions = []
+    try:
+        pyx_paths = [
+            Path("sequenzo/clustering/utils/point_biserial.pyx").as_posix(),
+            Path("sequenzo/dissimilarity_measures/utils/get_sm_trate_substitution_cost_matrix.pyx").as_posix(),
+            Path("sequenzo/dissimilarity_measures/utils/seqconc.pyx").as_posix(),
+            Path("sequenzo/dissimilarity_measures/utils/seqdss.pyx").as_posix(),
+            Path("sequenzo/dissimilarity_measures/utils/seqdur.pyx").as_posix(),
+            Path("sequenzo/dissimilarity_measures/utils/seqlength.pyx").as_posix(),
+        ]
 
-    for pyx_file in cython_files:
-        module_name = pyx_file.replace("/", ".").replace(".pyx", "")
-        extensions.append(
+        extensions = [
             Extension(
-                name=module_name,
-                sources=[pyx_file],
+                name=path.replace("/", ".").replace(".pyx", ""),
+                sources=[path],
                 include_dirs=[numpy.get_include()],
                 extra_compile_args=get_cython_compile_args(),
             )
-        )
-
-    if extensions:
+            for path in pyx_paths
+        ]
         print(f"Found {len(extensions)} Cython modules.")
         return cythonize(extensions, compiler_directives={"language_level": "3"})
-    else:
-        print("No Cython modules found.")
+    except Exception as e:
+        print(f"Warning: Unable to configure Cython extensions: {e}")
         return []
 
 

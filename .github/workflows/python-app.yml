@@ -40,6 +40,9 @@ jobs:
       - name: Build extensions (cythonize)
         run: python setup.py build_ext --inplace
 
+      # CIBW_SKIP: "pp*" 表示跳过所有 PyPy 构建（如 pp39-*, pp310-* 等）。
+      # 我们的项目里有大量的 Cython 模块、.cpp / .pyx 扩展、pybind11 接口
+      # 这些都是 为 CPython 编译的本地扩展，PyPy 对它们支持很不完善，编译也会失败
       - name: Build wheels (platform-specific)
         run: |
           if [[ "${{ runner.os }}" == "macOS" ]]; then
@@ -47,8 +50,9 @@ jobs:
             python -m build
           else
             python -m cibuildwheel --output-dir dist
-          fi
         shell: bash
+        env:
+          CIBW_SKIP: "pp*"
 
       - name: Check wheels
         run: twine check dist/*
