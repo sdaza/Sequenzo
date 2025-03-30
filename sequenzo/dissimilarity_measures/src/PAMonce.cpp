@@ -1,23 +1,13 @@
 ﻿#include <pybind11/pybind11.h>
 #include <pybind11/numpy.h>
+#include <pybind11/detail/common.h>  // 使用 pybind11 提供的 ssize_t
 #include <vector>
 #include <iostream>
+
 #define WEIGHTED_CLUST_TOL -1e-10
 
-// 加入了判断平台的宏
-// MSVC 下通过 basetsd.h 引入了 SSIZE_T 并定义了 ssize_t
-// 非 Windows（Linux/macOS）下继续用 <unistd.h>（它原生就有 ssize_t）
-// 如果是 Windows (_MSC_VER)，如果没有定义过 ssize_t，那就定义它；
-// 否则（Linux/macOS），照常 #include <unistd.h>
-#if defined(_MSC_VER)
-    #include <basetsd.h>
-    #ifndef _SSIZE_T_DEFINED
-        typedef SSIZE_T ssize_t;
-        #define _SSIZE_T_DEFINED
-    #endif
-#else
-    #include <unistd.h>
-#endif
+// 使用 pybind11 的 ssize_t 类型，跨平台更兼容
+using ssize_t = pybind11::ssize_t;
 
 namespace py = pybind11;
 
