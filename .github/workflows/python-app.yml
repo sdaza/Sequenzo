@@ -62,16 +62,10 @@ jobs:
           CIBW_SKIP: "pp*"
 
       # 这样就能看到 actions 机器上， wheel 文件是否生成成功
-      # -l, -a, -h 是为了美观，并不影响实际查看 .whl 文件是否存在
+      # Windows 的 bash 环境一样支持 ls，并不会有问题。这样最简洁、最少坑
       - name: Show dist content
-        run: |
-          if [[ "$RUNNER_OS" == "Windows" ]]; then
-            Get-ChildItem -Recurse dist/
-          else
-            ls -lah dist/
-          fi
+        run: ls -lah dist/
         shell: bash
-
 
       # 检查 .whl 和 .tar.gz 是否符合 PyPI 的格式规范，提前捕获打包错误，避免上传 PyPI 后才失败
       - name: Check wheels
