@@ -16,18 +16,19 @@ from sequenzo.clustering import Cluster
 
 # CSV 文件路径列表
 csv_files = [
-    'df_sampled_500_detailed_sequences.csv',
-    'df_sampled_1000_detailed_sequences.csv',
-    'df_sampled_2000_detailed_sequences.csv',
-    'df_sampled_3000_detailed_sequences.csv',
-    'df_sampled_4000_detailed_sequences.csv',
-    'df_sampled_5000_detailed_sequences.csv',
-    'df_sampled_10000_detailed_sequences.csv',
-    'df_sampled_15000_detailed_sequences.csv',
-    'df_sampled_25000_detailed_sequences.csv'
+    'sampled_1000_data.csv',
+    # 'df_sampled_1000_detailed_sequences.csv',
+    # 'df_sampled_2000_detailed_sequences.csv',
+    # 'df_sampled_3000_detailed_sequences.csv',
+    # 'df_sampled_4000_detailed_sequences.csv',
+    # 'df_sampled_5000_detailed_sequences.csv',
+    # 'df_sampled_10000_detailed_sequences.csv',
+    # 'df_sampled_15000_detailed_sequences.csv',
+    # 'df_sampled_25000_detailed_sequences.csv'
 ]
 
-data_dir = '/Users/lei/Documents/Sequenzo_all_folders/sequenzo_local/test_results/relative_frequency/240210_relative_frequency_test_results'
+# data_dir = '/Users/lei/Documents/Sequenzo_all_folders/sequenzo_local/test_results/relative_frequency/240210_relative_frequency_test_results'
+data_dir = '/home/xinyi/data/detailed_data'
 
 # 存储运行时间和文件名的列表
 runtimes = []

@@ -58,7 +58,7 @@
 import gc
 import warnings
 import os
-import psutil
+import platform
 
 import numpy as np
 import pandas as pd
@@ -70,12 +70,17 @@ from sequenzo.define_sequence_data import SequenceData
 # @numba.jit(nopython=True, parallel=True)
 def get_distance_matrix(seqdata=None, method=None, refseq=None, norm="none", indel="auto", sm=None, with_missing=False, full_matrix=True,
                         tpow=1.0, expcost=0.5, weighted=True, check_max_size=True, opts=None):
-    # os.sched_setaffinity(0, {0, 1, 2})
-    pid = os.getpid()
-    p = psutil.Process(pid)
+    current_os = platform.system()
 
     try:
-        p.cpu_affinity([0, 1, 2])
+        if current_os == "Linux" or current_os == "Darwin":
+            os.sched_setaffinity(0, {0, 1, 2})
+        elif current_os == "Windows":
+            import psutil
+
+            pid = os.getpid()
+            p = psutil.Process(pid)
+            p.cpu_affinity([0, 1, 2])
     except AttributeError:
         print("[!] cpu_affinity() not supported on this platform. Skipping...")
 
@@ -425,6 +430,7 @@ def get_distance_matrix(seqdata=None, method=None, refseq=None, norm="none", ind
         # for example: "0-1-1-1-2-2-3-2-2" ---> "0-1-2-3-2"
         seqdata_dss = seqdss(seqdata, with_missing)
         dseqs_num = seqdata_dss[dseqs_oidxs, :]
+        # dseqs_num[dseqs_num < 0] = np.nan
 
         if method == "OMspell":
             _seqlength = seqlength(dseqs_num)
