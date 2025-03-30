@@ -7,9 +7,14 @@
 // 加入了判断平台的宏
 // MSVC 下通过 basetsd.h 引入了 SSIZE_T 并定义了 ssize_t
 // 非 Windows（Linux/macOS）下继续用 <unistd.h>（它原生就有 ssize_t）
+// 如果是 Windows (_MSC_VER)，如果没有定义过 ssize_t，那就定义它；
+// 否则（Linux/macOS），照常 #include <unistd.h>
 #if defined(_MSC_VER)
     #include <basetsd.h>
-    typedef SSIZE_T ssize_t;
+    #ifndef _SSIZE_T_DEFINED
+        typedef SSIZE_T ssize_t;
+        #define _SSIZE_T_DEFINED
+    #endif
 #else
     #include <unistd.h>
 #endif
