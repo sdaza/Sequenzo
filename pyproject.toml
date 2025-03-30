@@ -19,7 +19,7 @@ authors = [
     { name = "Xinyi Li", email = "1836724126@qq.com" },
     { name = "Jan Heinrich Ernst Meyerhoff-Liang", email = "jan.meyerhoff1@gmail.com" }
 ]
-license = "BSD-3-Clause"
+license = { file = "LICENSE" }
 requires-python = ">=3.9,<3.12"
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -58,7 +58,6 @@ Documentation = "https://sequenzo.yuqi-liang.tech"
 
 [tool.setuptools]
 package-data = {"sequenzo.datasets" = ["country_co2_emissions.csv", "country_income.csv", "chinese_colonial_territories.csv"]}
-license-files = ["LICENSE"]
 
 [tool.setuptools.packages.find]
 # 这告诉 setuptools：sequenzo 包目录就直接在当前目录下（不是 sequenzo/sequenzo 里）
