@@ -11,7 +11,7 @@ import platform
 import sys
 from pathlib import Path
 
-__version__ = "0.1.3"
+__version__ = "0.1.4"
 
 # Construct the expected path to the extension module.
 _lib_path = Path(__file__).parent / "sequenzo" / ("_rust_fast_cluster" + {
