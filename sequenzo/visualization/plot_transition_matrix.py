@@ -53,7 +53,7 @@ def compute_transition_matrix(seqdata: SequenceData, with_missing: bool = False,
     w_pair = np.repeat(w, T-1)  # Each sequence weight replicated (T-1) times
 
     # Filter valid transitions
-    valid = (current >= 0) & (current < num_states) & (nxt >= 0) & (nxt < num_states)
+    valid = (current >= 0) & (current <= num_states) & (nxt >= 0) & (nxt <= num_states)
     current, nxt, w_pair = current[valid], nxt[valid], w_pair[valid]
 
     # Compute weighted transition counts
