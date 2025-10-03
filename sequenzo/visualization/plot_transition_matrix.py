@@ -52,8 +52,8 @@ def compute_transition_matrix(seqdata: SequenceData, with_missing: bool = False,
     nxt = A[:, 1:].flatten()
     w_pair = np.repeat(w, T-1)  # Each sequence weight replicated (T-1) times
 
-    # Filter valid transitions
-    valid = (current >= 0) & (current <= num_states) & (nxt >= 0) & (nxt <= num_states)
+    # Filter valid transitions (states are encoded as 1, 2, 3, ..., num_states)
+    valid = (current >= 1) & (current <= num_states) & (nxt >= 1) & (nxt <= num_states)
     current, nxt, w_pair = current[valid], nxt[valid], w_pair[valid]
 
     # Compute weighted transition counts
@@ -92,7 +92,7 @@ def print_transition_matrix(seqdata: SequenceData, transition_rates: np.ndarray)
     :param seqdata: SequenceData object containing state information
     :param transition_rates: numpy array containing transition rates
     """
-    state_labels = seqdata.states_labels
+    state_labels = seqdata.labels
 
     # Calculate max width needed for state labels
     max_label_width = max(len(s) for s in state_labels) + 3  # +3 for arrow
