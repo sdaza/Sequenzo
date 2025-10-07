@@ -32,12 +32,12 @@ def compute_transition_matrix(seqdata: SequenceData, with_missing: bool = False,
     # Process weights
     if isinstance(weights, str) and weights == "auto":
         weights = getattr(seqdata, "weights", None)
-    
+
     if weights is not None:
         weights = np.asarray(weights, dtype=float).reshape(-1)
         if len(weights) != len(seqdata.values):
             raise ValueError("Length of weights must equal number of sequences.")
-    
+
     num_states = len(seqdata.states)
     A = seqdata.to_dataframe().to_numpy()
     n, T = A.shape
@@ -60,11 +60,11 @@ def compute_transition_matrix(seqdata: SequenceData, with_missing: bool = False,
     # Create mapping from state codes to matrix indices
     state_codes = sorted(set(current) | set(nxt))
     code_to_idx = {code: idx for idx, code in enumerate(state_codes)}
-    
+
     # Use only the actual number of unique states for matrix size
     actual_num_states = len(state_codes)
     trans = np.zeros((actual_num_states, actual_num_states), dtype=float)
-    
+
     for c, n2, ww in zip(current, nxt, w_pair):
         trans[code_to_idx[int(c)], code_to_idx[int(n2)]] += ww
 
@@ -75,7 +75,7 @@ def compute_transition_matrix(seqdata: SequenceData, with_missing: bool = False,
 
     # Create a properly sized matrix with correct mapping to original states
     final_matrix = np.zeros((num_states, num_states), dtype=float)
-    
+
     # Map back to the original state positions
     for i, from_code in enumerate(state_codes):
         for j, to_code in enumerate(state_codes):
@@ -130,22 +130,23 @@ def plot_transition_matrix(seqdata: SequenceData,
                            title: Optional[str] = None,
                            fontsize: int = 12,
                            save_as: Optional[str] = None,
-                           dpi: int = 200) -> None:
+                           dpi: int = 200,
+                           format: str = "%.2f") -> None:
     """
     Plot state transition rate matrix as a heatmap.
 
     :param seqdata: SequenceData object containing sequence information
     :param weights: (np.ndarray or "auto") Weights for sequences. If "auto", uses seqdata.weights if available
     :param title: optional title for the plot
+    :param fontsize: base font size for labels
     :param save_as: optional file path to save the plot
     :param dpi: resolution of the saved plot
+    :param format: format string for annotations (default "%.2f")
     """
+
     # Compute transition matrix with weights
     transition_matrix = compute_transition_matrix(seqdata, weights=weights)
     transition_matrix = np.array(transition_matrix)
-
-    # Create upper triangle mask (show diagonal)
-    mask = np.triu(np.ones(transition_matrix.shape, dtype=bool), k=1)
 
     # Set figure size
     plt.figure(figsize=(12, 10))
@@ -153,19 +154,18 @@ def plot_transition_matrix(seqdata: SequenceData,
     # Use fresh color scheme
     cmap = sns.color_palette("light:#5A9", as_cmap=True)
 
-    # Generate heatmap
+    # Generate heatmap using pre-formatted annotation strings
     ax = sns.heatmap(
         transition_matrix,
-        mask=mask,
-        annot=True,
-        fmt=".2f",
+        fmt=format,
         cmap=cmap,
         xticklabels=seqdata.labels,
         yticklabels=seqdata.labels,
         linewidths=0.5,
         linecolor="gray",
         cbar_kws={"shrink": 0.8},
-        square=True
+        square=True,
+        annot_kws={"fontsize": fontsize - 2}
     )
 
     # Show all the borderlines
@@ -175,7 +175,7 @@ def plot_transition_matrix(seqdata: SequenceData,
     # Adjust format
     if title:
         show_plot_title(plt.gca(), title, show=True, fontsize=fontsize+2, fontweight='bold', pad=20)
-    # plt.title("State Transition Rate Matrix", fontsize=14, fontweight='bold', pad=20)
+
     plt.xlabel("State at t + 1", fontsize=fontsize, labelpad=10)
     plt.ylabel("State at t", fontsize=fontsize, labelpad=10)
 
@@ -186,5 +186,5 @@ def plot_transition_matrix(seqdata: SequenceData,
     # Adjust layout
     plt.tight_layout()
 
-    save_and_show_results(save_as, dpi=200)
+    save_and_show_results(save_as, dpi=dpi)
 
