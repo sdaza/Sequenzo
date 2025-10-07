@@ -131,7 +131,7 @@ def plot_transition_matrix(seqdata: SequenceData,
                            fontsize: int = 12,
                            save_as: Optional[str] = None,
                            dpi: int = 200,
-                           fmt: str = ".2f") -> None:
+                           format: str = "%.2f") -> None:
     """
     Plot state transition rate matrix as a heatmap.
 
@@ -141,7 +141,7 @@ def plot_transition_matrix(seqdata: SequenceData,
     :param fontsize: base font size for labels
     :param save_as: optional file path to save the plot
     :param dpi: resolution of the saved plot
-    :param fmt: format string for annotations (default ".2f" for 2 decimals)
+    :param format: format string for annotations (default "%.2f")
     """
 
     # Compute transition matrix with weights
@@ -154,11 +154,10 @@ def plot_transition_matrix(seqdata: SequenceData,
     # Use fresh color scheme
     cmap = sns.color_palette("light:#5A9", as_cmap=True)
 
-    # Generate heatmap
+    # Generate heatmap using pre-formatted annotation strings
     ax = sns.heatmap(
         transition_matrix,
-        annot=True,
-        fmt=fmt,
+        fmt=format,
         cmap=cmap,
         xticklabels=seqdata.labels,
         yticklabels=seqdata.labels,
