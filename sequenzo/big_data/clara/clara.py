@@ -23,6 +23,42 @@ from sequenzo.big_data.clara.utils.get_weighted_diss import *
 from sequenzo.define_sequence_data import SequenceData
 from sequenzo.dissimilarity_measures.get_distance_matrix import get_distance_matrix
 
+# 兼容 Windows 对 API 和 ABI 模式
+import glob
+import os
+import sys
+import cffi
+
+ffi = cffi.FFI()
+if sys.platform.startswith("win"):
+    files = glob.glob(os.path.join(os.path.dirname(__file__), "*.pyd"))
+else:
+    files = glob.glob(os.path.join(os.path.dirname(__file__), "*.so"))
+if not files:
+    raise FileNotFoundError("No compiled library found")
+lib_file = files[0]
+try:
+    # 重定向 stderr 来抑制 cffi 的错误信息输出
+    import io
+    old_stderr = sys.stderr
+    sys.stderr = io.StringIO()
+    try:
+        lib = ffi.dlopen(lib_file)
+    finally:
+        # 恢复 stderr
+        sys.stderr = old_stderr
+except ImportError as e:
+    if sys.platform.startswith("win") and 'cffi mode "ANY" is only "ABI"' in str(e):
+        # Windows 降级到 ABI 模式，同样抑制错误信息
+        old_stderr = sys.stderr
+        sys.stderr = io.StringIO()
+        try:
+            lib = ffi.dlopen(lib_file)
+        finally:
+            sys.stderr = old_stderr
+    else:
+        raise
+
 
 def adjustedRandIndex(x, y=None):
     if isinstance(x, np.ndarray):

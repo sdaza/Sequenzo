@@ -75,11 +75,23 @@ from scipy.spatial.distance import squareform
 # sklearn metrics no longer needed - using C++ implementation
 from fastcluster import linkage
 
-import rpy2.robjects as ro
-from rpy2.robjects import numpy2ri
-from rpy2.robjects.packages import importr
-from rpy2.robjects.conversion import localconverter
-from rpy2.robjects import FloatVector
+# Optional R integration for Ward D method
+_RPY2_AVAILABLE = False
+ro = None
+importr = None
+
+try:
+    import rpy2.robjects as ro
+    from rpy2.robjects.packages import importr, PackageNotInstalledError
+    _RPY2_AVAILABLE = True
+except ImportError:
+    # Catch ImportError during rpy2 import/initialization
+    pass
+
+if not _RPY2_AVAILABLE:
+    print("[!] Warning: rpy2 not available or R not properly configured. Ward D clustering method will not be supported.")
+    print("    To use Ward D clustering, ensure R is installed and rpy2 is properly configured.")
+    print("    Alternatively, use 'ward_d2', 'average', 'complete', or 'single' methods.")
 
 # Import C++ cluster quality functions
 try:
@@ -89,11 +101,125 @@ except ImportError:
     _CPP_AVAILABLE = False
     print("[!] Warning: C++ cluster quality functions not available. Using Python fallback.")
 
+# 兼容 Windows 对 API 和 ABI 模式
+import glob
+import os
+import sys
+import cffi
+
+ffi = cffi.FFI()
+if sys.platform.startswith("win"):
+    files = glob.glob(os.path.join(os.path.dirname(__file__), "*.pyd"))
+else:
+    files = glob.glob(os.path.join(os.path.dirname(__file__), "*.so"))
+if not files:
+    raise FileNotFoundError("No compiled library found")
+lib_file = files[0]
+try:
+    # 重定向 stderr 来抑制 cffi 的错误信息输出
+    import io
+    old_stderr = sys.stderr
+    sys.stderr = io.StringIO()
+    try:
+        lib = ffi.dlopen(lib_file)
+    finally:
+        # 恢复 stderr
+        sys.stderr = old_stderr
+except ImportError as e:
+    if sys.platform.startswith("win") and 'cffi mode "ANY" is only "ABI"' in str(e):
+        # Windows 降级到 ABI 模式，同样抑制错误信息
+        old_stderr = sys.stderr
+        sys.stderr = io.StringIO()
+        try:
+            lib = ffi.dlopen(lib_file)
+        finally:
+            sys.stderr = old_stderr
+    else:
+        raise
+
 # Corrected imports: Use relative imports *within* the package.
 from sequenzo.visualization.utils import save_and_show_results
 
 # Global flag to ensure Ward warning is only shown once per session
 _WARD_WARNING_SHOWN = False
+
+def _ensure_r_environment_and_fastcluster():
+    """
+    Ensure R runtime is discoverable and R package 'fastcluster' is installed.
+    - Optionally set R_HOME if common paths exist and env var is missing
+    - Choose CRAN mirror
+    - Auto-install 'fastcluster' if not present
+    """
+    print('  - Checking R runtime environment and fastcluster.')
+
+    # Best-effort: set R_HOME if not set and common locations exist (Linux, macOS, Windows)
+    if not os.environ.get('R_HOME'):
+        candidates = []
+        if sys.platform.startswith('linux'):
+            candidates.extend([
+                '/usr/lib/R',
+                '/usr/local/lib/R'
+            ])
+        elif sys.platform == 'darwin':
+            candidates.extend([
+                '/Library/Frameworks/R.framework/Resources',  # CRAN pkg for macOS
+                '/usr/local/lib/R',
+                '/usr/lib/R'
+            ])
+        elif sys.platform == 'win32':
+            # Probe common Windows locations; pick highest version folder if multiple
+            win_globs = [
+                r'C:\\Program Files\\R\\R-*',
+                r'C:\\Program Files (x86)\\R\\R-*',
+                r'C:\\R\\R-*'
+            ]
+            for pattern in win_globs:
+                versions = sorted(glob.glob(pattern))
+                if versions:
+                    # Use the last (lexicographically highest) as latest
+                    candidates.append(versions[-1])
+        # Set first existing candidate
+        for path in candidates:
+            if os.path.isdir(path):
+                os.environ['R_HOME'] = path
+                break
+
+    # On Windows, ensure PATH includes R bin directory so rpy2 can load R dlls
+    if sys.platform == 'win32' and os.environ.get('R_HOME'):
+        r_bin64 = os.path.join(os.environ['R_HOME'], 'bin', 'x64')
+        r_bin = os.path.join(os.environ['R_HOME'], 'bin')
+        current_path = os.environ.get('PATH', '')
+        for p in (r_bin64, r_bin):
+            if os.path.isdir(p) and p not in current_path:
+                os.environ['PATH'] = p + os.pathsep + current_path
+
+    # Ensure utils and mirror
+    utils = importr('utils')
+    try:
+        # If a mirror is not chosen, choose the first (may be reset by user later)
+        utils.chooseCRANmirror(ind=1)
+    except Exception:
+        # Fallback to cloud mirror
+        try:
+            ro.r('options(repos = c(CRAN = "https://cloud.r-project.org"))')
+        except Exception:
+            pass
+
+    # Ensure fastcluster installed
+    try:
+        importr('fastcluster')
+    except PackageNotInstalledError:
+        try:
+            # Try install with explicit repo and limited parallelism
+            utils.install_packages('fastcluster', repos='https://cloud.r-project.org', Ncpus=2)
+            importr('fastcluster')
+        except Exception as install_err:
+            raise RuntimeError(
+                "Failed to install R package 'fastcluster' automatically. "
+                "Please ensure internet access and a working R toolchain are available. "
+                f"Original error: {install_err}"
+            )
+
 
 
 def _check_euclidean_compatibility(matrix, method):
@@ -439,6 +565,15 @@ class Cluster:
             fastcluster_method = self._map_method_name(self.clustering_method)
 
             if self.clustering_method == "ward_d" or self.clustering_method == "ward":
+                if not _RPY2_AVAILABLE:
+                    raise ImportError(
+                        "rpy2 is required for Ward D clustering method but is not available or R is not properly configured.\n"
+                        "Install rpy2 and ensure R is properly set up, or install with: pip install sequenzo[r]\n"
+                        "Alternatively, use 'ward_d2', 'average', 'complete', or 'single' methods."
+                    )
+                # Ensure R and R package fastcluster are available (auto-install if needed)
+                _ensure_r_environment_and_fastcluster()
+
                 fastcluster_r = importr("fastcluster")
 
                 # 将 full_matrix 转换为 R 矩阵（直接从 Python 数组创建），避免 rpy2 对大向量长度出错

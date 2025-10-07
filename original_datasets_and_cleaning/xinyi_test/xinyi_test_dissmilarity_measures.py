@@ -7,7 +7,12 @@
 import pandas as pd
 import time
 import os
+import fastcluster
+from scipy.spatial.distance import pdist
+from scipy.cluster.hierarchy import dendrogram
+from scipy.spatial.distance import squareform
 
+from sequenzo import Cluster
 from sequenzo.define_sequence_data import SequenceData
 from sequenzo.dissimilarity_measures.get_distance_matrix import get_distance_matrix
 
@@ -33,6 +38,7 @@ U_files = [
     # 'synthetic_detailed_U5_N50000.csv',
 
     # 'synthetic_detailed_U25_N500.csv',
+    # 'synthetic_detailed_U25_N1000.csv',
     # 'synthetic_detailed_U25_N1500.csv',
     # 'synthetic_detailed_U25_N2000.csv',
     # 'synthetic_detailed_U25_N2500.csv',
@@ -72,6 +78,7 @@ U_files = [
     # 'synthetic_detailed_U50_N50000.csv',
 
     # 'synthetic_detailed_U85_N500.csv',
+    # 'synthetic_detailed_U85_N1000.csv',
     # 'synthetic_detailed_U85_N1500.csv',
     # 'synthetic_detailed_U85_N2000.csv',
     # 'synthetic_detailed_U85_N2500.csv',
@@ -95,7 +102,7 @@ U_files = [
 # data_dir = 'D:/college/research/QiQi/sequenzo/files/detialed_transposed.csv'
 # data_dir = 'D:\\college\\research\\QiQi\\sequenzo\\data_and_output\\sampled_data_sets\\broad_data'
 # data_dir = 'D:\\college\\research\\QiQi\\sequenzo\\data_and_output\\sampled_data_sets\\detailed_data'
-data_dir = 'D:/college/research/QiQi/sequenzo/data_and_output/orignal data/not_real_detailed_data'
+data_dir = '/Users/xinyi/Projects/sequenzo/sequenzo/data_and_output/orignal data/not_real_detailed_data'
 
 # 存储运行时间和文件名的列表
 runtimes = []
@@ -124,21 +131,20 @@ for filename in U_files:
     # states = ['Very Low', 'Low', 'Middle', 'High', 'Very High']
 
     # data = SequenceData(df, time=_time, time_type="age", id_col="worker_id", states=states)
-    data = SequenceData(df, time=_time, time_type="age", id_col="id", states=states)
+    data = SequenceData(df, time=_time, id_col="id", states=states)
     # data = SequenceData(df, time=_time, time_type="year", id_col="country", states=states)
 
-    # refseq = [[0, 1, 2], [99, 100]]
+    diss = get_distance_matrix(seqdata=data, method="OM", sm="CONSTANT", indel=1).to_numpy()
 
-    start_time = time.time()
-    diss = get_distance_matrix(seqdata=data, method="OM", sm="CONSTANT", indel=1)
+    # Cluster(diss, data.ids, clustering_method='ward_d2')
+    # diss = pdist(diss, metric='euclidean')
+    # diss = squareform(diss, checks=False)
 
-    # centroids = [1, 50, 100, 150]
-    # clustering = KMedoids(diss=diss, k=4, method='pamonce')
-    # print(clustering)
-    # print(diss)
-    end_time = time.time()
+    start = time.time()
+    linkage_matrix = fastcluster.linkage(diss, method='ward')
+    end = time.time()
 
-    runtime = end_time - start_time
+    runtime = end - start
     runtimes.append(runtime)
     filenames.append(filename)
 
